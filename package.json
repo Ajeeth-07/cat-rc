@@ -1,0 +1,17 @@
+{
+  "name": "project-cat",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ajeeth Shinde",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.8.1",
+    "cheerio": "^1.0.0",
+    "puppeteer": "^24.3.0",
+    "uuid": "^11.1.0"
+  }
+}
