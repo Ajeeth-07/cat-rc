@@ -2,7 +2,7 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const fs = require("fs");
 const path = require("path");
-
+const { Essay } = require("./db"); // Add this import
 // Base URL
 const baseUrl = "https://aeon.co";
 const essaysUrl = `${baseUrl}/essays`;
@@ -82,15 +82,13 @@ async function scrapeEssay(url) {
 
     // Get the category - look in the parent div you mentioned class="sc-c0f26063-2 giKPKU font-mono peer-hover:hidden"
     let category = "";
-    $(".sc-c0f26063-1.eGkpxO")
-      .find("p.sc-c0f26063-2.giKPKU.font-mono, p.font-mono")
-      .each((i, el) => {
-        const text = $(el).text().trim();
-        if (text) {
-          category = text;
-          return false; // break the loop once we find a category
-        }
-      });
+    $("p.sc-c0f26063-2.giKPKU.font-mono.peer-hover\\:hidden").each((i, el) => {
+      const text = $(el).text().trim();
+      if (text) {
+        category = text;
+        return false; // break the loop once we find a category
+      }
+    });
 
     // Get the content from the div with the specified class
     const contentDiv = $('div[class*="lclXep"], div.has-dropcap');
@@ -148,42 +146,54 @@ function saveEssays(essays, filename = "aeon_essays.json") {
 // Main function
 async function main() {
   try {
-    // Get all essay links (set a reasonable maximum number of pages to scrape)
-    const links = await getEssayLinks(5); // Adjust the number as needed
+    const links = await getEssayLinks(5);
     console.log(`Found ${links.length} essay links`);
 
-    // Define how many essays to scrape (remove the slice to scrape all)
-    // For testing, you can limit to a small number first
-    const targetLinks = links; // Remove the slice to get all essays
-
-    // Scrape each essay
-    const essays = [];
+    const targetLinks = links;
     let count = 0;
 
     for (const link of targetLinks) {
-      const essay = await scrapeEssay(link);
-      if (essay) {
-        essays.push(essay);
-        count++;
+      try {
+        const essay = await scrapeEssay(link);
+        if (essay) {
+          // Check if essay already exists
+          const existingEssay = await Essay.findOne({
+            $or: [{ title: essay.title }, { url: essay.url }],
+          });
+
+          if (!existingEssay) {
+            // Save to MongoDB
+            await Essay.create({
+              title: essay.title,
+              url: essay.url,
+              category: essay.category,
+              content: essay.content,
+              publishedDate: essay.publishedDate,
+              scrappedDate: essay.scrapedDate,
+              wordCount: essay.wordCount,
+            });
+            count++;
+            console.log(`Added essay: ${essay.title}`);
+          } else {
+            console.log(`Skipping duplicate essay: ${essay.title}`);
+          }
+        }
 
         // Log progress
         if (count % 10 === 0) {
           console.log(
-            `Progress: ${count}/${targetLinks.length} essays scraped`
+            `Progress: ${count}/${targetLinks.length} essays added to DB`
           );
-          // Optionally save intermediate results
-          saveEssays(essays, "aeon_essays_partial.json");
         }
-      }
 
-      // Add a delay to avoid overloading the server
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      } catch (error) {
+        console.error(`Error processing essay ${link}:`, error.message);
+        continue; // Continue with next essay if one fails
+      }
     }
 
-    // Save essays to file
-    saveEssays(essays);
-
-    console.log("Scraping completed successfully!");
+    console.log(`Scraping completed! Added ${count} new essays to database.`);
   } catch (error) {
     console.error("Error in main function:", error.message);
   }
@@ -191,3 +201,7 @@ async function main() {
 
 // Run the main function
 main();
+
+module.exports ={
+  essaysUrl,scrapeEssay
+}

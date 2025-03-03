@@ -26,12 +26,66 @@ const essaySchema = new mongoose.Schema({
     type: String,
   },
   content: { type: String },
-  publishedDate : {type:String},
-  scrappedDate : {type:String},
-  wordCount : {type:Number}
+  publishedDate: { type: String },
+  scrappedDate: { type: String },
+  wordCount: { type: Number },
 });
 
+//rc-materials
+const rcSchema = new mongoose.Schema({
+  essayId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Essay",
+    required: true,
+  },
+  summary: {
+    type: String,
+    required: true,
+    minlength: 450,
+    maxlength: 600,
+  },
+  questions: [
+    {
+      questionText: {
+        type: String,
+        required: true,
+      },
+      questionType: {
+        type: String,
+        enum: [
+          "main-idea",
+          "inference",
+          "tone-style",
+          "fact-detail",
+          "strengthen-weaken",
+          "other",
+        ],
+        required: true,
+      },
+      options: [
+        {
+          text: String,
+          isCorrect: Boolean,
+        },
+      ],
+      explanation: {
+        type: String,
+        required: true,
+      },
+    },
+  ],
+  metadata: {
+    generatedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    wordCount: Number,
+    aiModel: String,
+    promptUsed: String,
+  },
+});
 
 const Essay = mongoose.model("Essay", essaySchema);
+const RC = mongoose.model("RC", rcSchema);
 
-module.exports = {Essay}
+module.exports = { Essay, RC };
