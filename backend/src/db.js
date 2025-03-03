@@ -42,7 +42,6 @@ const rcSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 450,
-    maxlength: 600,
   },
   questions: [
     {
@@ -58,6 +57,8 @@ const rcSchema = new mongoose.Schema({
           "tone-style",
           "fact-detail",
           "strengthen-weaken",
+          "detail",
+          "vocabulary",
           "other",
         ],
         required: true,

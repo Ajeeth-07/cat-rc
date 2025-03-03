@@ -25,6 +25,40 @@ function truncateText(text, maxWords = 3000) {
   );
 }
 
+/**
+ * Helper function to extract JSON from text that might include markdown code blocks
+ */
+function extractJSON(text) {
+  // Try to find JSON inside markdown code blocks first
+  const jsonRegex = /```(?:json)?\s*([\s\S]*?)\s*```/;
+  const match = text.match(jsonRegex);
+
+  // If found inside code blocks, use that
+  if (match && match[1]) {
+    try {
+      return JSON.parse(match[1]);
+    } catch (e) {
+      console.log("Found code blocks but couldn't parse JSON inside them");
+    }
+  }
+
+  // Otherwise, try to parse the entire text
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    // As a last resort, try to find anything that looks like JSON
+    const possibleJson = text.match(/\{[\s\S]*\}/);
+    if (possibleJson) {
+      try {
+        return JSON.parse(possibleJson[0]);
+      } catch (e) {
+        throw new Error("Could not extract valid JSON from response");
+      }
+    }
+    throw new Error("Could not extract valid JSON from response");
+  }
+}
+
 async function generateRCContent(essayContent, essayTitle, essayCategory = "") {
   try {
     // Truncate the essay content if it's too long
@@ -57,7 +91,7 @@ IMPORTANT: Format your entire response as valid JSON following this exact struct
   "questions": [
     {
       "questionText": "question here",
-      "questionType": "main-idea/inference/detail/vocabulary/strengthen-weaken",
+      "questionType": "main-idea/inference/detail/strengthen-weaken",
       "options": [
         {"text": "option A", "isCorrect": false},
         {"text": "option B", "isCorrect": true},
@@ -103,22 +137,20 @@ ${truncatedContent}`;
 
     // Rest of the function remains the same
     const text = response.data.candidates[0].content.parts[0].text;
-    console.log("Received response, parsing JSON...");
+    console.log("Received response, extracting JSON...");
 
-    // Parse the response as JSON
+    // Use our improved JSON extraction function
     let rcContent;
     try {
-      // Clean the text in case the model adds markdown backticks
-      const cleanedText = text.replace(/```json|```/g, "").trim();
-      rcContent = JSON.parse(cleanedText);
-      console.log("Successfully parsed JSON response");
+      rcContent = extractJSON(text);
+      console.log("Successfully extracted JSON response");
     } catch (error) {
-      console.error("Failed to parse JSON response. Raw response:", text);
+      console.error("Failed to extract JSON. Raw response:", text);
       throw new Error("Invalid JSON response from Gemini API");
     }
 
     // Validate and set summary word count
-    const summaryWordCount = countWords(rcContent.summary);
+    const summaryWordCount = countWords(rcContent.summary || "");
     rcContent.metadata = rcContent.metadata || {};
     rcContent.metadata.wordCount = summaryWordCount;
 
