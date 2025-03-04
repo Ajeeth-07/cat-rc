@@ -123,6 +123,7 @@ async function batchProcessEssays() {
         const newRC = await RC.create({
           essayId: essay._id,
           summary: rcContent.summary,
+          category : rcContent.category,
           questions: rcContent.questions,
           metadata: rcContent.metadata,
         });
@@ -141,6 +142,7 @@ async function batchProcessEssays() {
           )}`
         );
         console.log(`  Summary: ${rcContent.metadata.wordCount} words`);
+        console.log(`  Category: ${rcContent.category} `);
         console.log(`  Questions: ${rcContent.questions.length}`);
         console.log(`  RC ID: ${newRC._id}`);
 

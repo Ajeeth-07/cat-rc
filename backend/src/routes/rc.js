@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const { Essay, RC } = require("../db");
-const { generateRCContent } = require("../utils/openai");
 
 // Update the RC generation route to use and update the processed flag
 router.post("/generate/:essayId", async (req, res) => {
@@ -42,6 +41,7 @@ router.post("/generate/:essayId", async (req, res) => {
     const newRC = await RC.create({
       essayId,
       summary: rcContent.summary,
+      category : rcContent.category,
       questions: rcContent.questions,
       metadata: rcContent.metadata,
     });

@@ -58,6 +58,22 @@ const rcSchema = new mongoose.Schema({
     required: true,
     minlength: 450,
   },
+  category: {
+    type: String,
+    enum: [
+      "Philosophy",
+      "Science",
+      "Psychology",
+      "Technology",
+      "Social Sciences",
+      "History",
+      "Culture",
+      "Ethics",
+      "Politics",
+      "Education",
+    ],
+    required: true,
+  },
   questions: [
     {
       questionText: {
