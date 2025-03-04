@@ -29,6 +29,21 @@ const essaySchema = new mongoose.Schema({
   publishedDate: { type: String },
   scrappedDate: { type: String },
   wordCount: { type: Number },
+  processed: {
+    type: Boolean,
+    default: false,
+  },
+  processingStatus: {
+    type: String,
+    enum: ["pending", "processing", "completed", "failed"],
+    default: "pending",
+  },
+  processedAt: {
+    type: Date,
+  },
+  processingError: {
+    type: String,
+  },
 });
 
 //rc-materials

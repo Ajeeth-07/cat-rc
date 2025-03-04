@@ -56,6 +56,33 @@ router.post("/scrape", async (req, res) => {
   }
 });
 
+// Add a new route to get processing stats
+router.get("/stats", async (req, res) => {
+  try {
+    const stats = {
+      total: await Essay.countDocuments(),
+      processed: await Essay.countDocuments({ processed: true }),
+      pending: await Essay.countDocuments({ processed: false }),
+      byStatus: {
+        pending: await Essay.countDocuments({ processingStatus: "pending" }),
+        processing: await Essay.countDocuments({
+          processingStatus: "processing",
+        }),
+        completed: await Essay.countDocuments({
+          processingStatus: "completed",
+        }),
+        failed: await Essay.countDocuments({ processingStatus: "failed" }),
+      },
+    };
+
+    res.status(200).json({ stats });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Failed to fetch stats", error: error.message });
+  }
+});
+
 async function scrapeAndSaveEssays(maxPages) {
   try {
     const links = await getEssayLinks(maxPages);
